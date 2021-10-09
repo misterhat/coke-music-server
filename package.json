@@ -1,0 +1,31 @@
+{
+  "name": "coke-music-server",
+  "version": "1.0.0",
+  "description": "coke music game server remake",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/misterhat/coke-music-server.git"
+  },
+  "keywords": [
+    "coke",
+    "music",
+    "cokemusic",
+    "isomorphic",
+    "game"
+  ],
+  "author": "Zorian Medwid <misterhat144@gmail.com>",
+  "license": "AGPL-3.0+",
+  "bugs": {
+    "url": "https://github.com/misterhat/coke-music-server/issues"
+  },
+  "homepage": "https://github.com/misterhat/coke-music-server#readme",
+  "dependencies": {
+    "bole": "^4.0.0",
+    "garnish": "^5.2.0",
+    "ws": "^8.2.3"
+  }
+}
