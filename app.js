@@ -97,8 +97,14 @@ class Room {
         this.broadcast({ type: 'move-character', id: character.id, x, y });
     }
 
-    chat(character, message ) {
-        this.broadcast({ type: 'chat', id: character.id, message });
+    chat(character, message) {
+        this.broadcast({
+            type: 'chat',
+            id: character.id,
+            message,
+            x: character.x,
+            y: character.y
+        });
     }
 
     encode() {
