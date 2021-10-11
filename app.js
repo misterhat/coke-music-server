@@ -17,9 +17,10 @@ const temp_ids = {
 };
 
 class Character {
-    constructor(server, { id }) {
+    constructor(server, { id, username }) {
         this.server = server;
 
+        this.username = username;
         this.id = id;
 
         this.room = null;
@@ -28,6 +29,9 @@ class Character {
     }
 
     move(x, y) {
+        this.x = x;
+        this.y = y;
+
         this.room.moveCharacter(this, x, y);
     }
 
@@ -74,6 +78,7 @@ class Room {
         setTimeout(() => {
             this.broadcast({
                 type: 'add-character',
+                username: newCharacter.username,
                 id: newCharacter.id,
                 x: newCharacter.x,
                 y: newCharacter.y
@@ -103,6 +108,7 @@ class Room {
             characters: Array.from(this.characters).map((character) => {
                 return {
                     id: character.id,
+                    username: character.username,
                     x: character.x,
                     y: character.y
                 };
