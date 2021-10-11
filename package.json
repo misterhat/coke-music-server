@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/misterhat/coke-music-server#readme",
   "dependencies": {
+    "@misterhat/easystarjs": "^0.5.3",
     "bole": "^4.0.0",
     "garnish": "^5.2.0",
     "ws": "^8.2.3"

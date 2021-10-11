@@ -1,6 +1,6 @@
-const rooms = require('coke-music-data/rooms.json');
-
+const EasyStar = require('@misterhat/easystarjs');
 const bole = require('bole');
+const rooms = require('coke-music-data/rooms.json');
 const { WebSocketServer } = require('ws');
 
 const log = bole('app');
@@ -26,6 +26,9 @@ class Character {
         this.room = null;
         this.x = 0;
         this.y = 0;
+
+        this.isWalking = false;
+        this.stepTimeout = null;
     }
 
     move(x, y) {
@@ -33,6 +36,46 @@ class Character {
         this.y = y;
 
         this.room.moveCharacter(this, x, y);
+    }
+
+    step() {
+        if (!this.path.length) {
+            this.stepTimeout = null;
+            this.isWalking = false;
+            return;
+        }
+
+        const { x, y } = this.path.shift();
+
+        this.move(x, y);
+
+        this.stepTimeout = setTimeout(this.step.bind(this), 250);
+    }
+
+    walkTo(x, y) {
+        if (this.stepTimeout) {
+            clearTimeout(this.stepTimeout);
+        }
+
+        this.room.easystar.findPath(
+            this.x,
+            this.y,
+            x,
+            y,
+            (path) => {
+                if (!path) {
+                    return;
+                }
+
+                this.path = path;
+                this.path.shift();
+
+                this.isWalking = true;
+
+                this.stepTimeout = setTimeout(this.step.bind(this), 250);
+            }
+        );
+
     }
 
     chat(message) {
@@ -58,8 +101,19 @@ class Room {
 
         Object.assign(this, rooms[name]);
 
+        // TODO clone this.map into obstacle map and add players
+
+        this.easystar = new EasyStar.js();
+        this.easystar.setGrid(this.map);
+        this.easystar.setAcceptableTiles([0]);
+        this.easystar.enableDiagonals();
+
         this.characters = new Set();
         this.ownerID = null;
+
+        this.pathInterval = setInterval(() => {
+            this.easystar.calculate();
+        }, 100);
     }
 
     broadcast(message) {
@@ -158,7 +212,6 @@ class Server {
                 break;
             }
             case 'get-rooms': {
-                //JSON.stringify(this.room.entries(this.rooms));
                 const rooms = [];
 
                 for (const [id, room] of this.rooms.entries()) {
@@ -181,6 +234,18 @@ class Server {
                     break;
                 }
 
+                const { character } = socket;
+
+                if (!character) {
+                    log.error('no character for socket');
+                    return;
+                }
+
+                if (character.room) {
+                    log.error('already in room');
+                    return;
+                }
+
                 socket.send(
                     JSON.stringify({
                         type: 'join-room',
@@ -192,7 +257,7 @@ class Server {
                 break;
             }
             case 'walk': {
-                const character = socket.character;
+                const { character } = socket;
 
                 if (!character) {
                     log.error('no character for socket');
@@ -204,11 +269,13 @@ class Server {
                     break;
                 }
 
-                character.move(message.x, message.y);
+                character.walkTo(message.x, message.y);
+
+                //character.move(message.x, message.y);
                 break;
             }
             case 'chat': {
-                const character = socket.character;
+                const { character } = socket;
 
                 if (!character) {
                     log.error('no character for socket');
