@@ -16,6 +16,8 @@ const temp_ids = {
     test3: 2
 };
 
+const STEP_TIMEOUT = 500;
+
 class Character {
     constructor(server, { id, username }) {
         this.server = server;
@@ -45,37 +47,48 @@ class Character {
             return;
         }
 
+        const lastX = this.x;
+        const lastY = this.y;
+
         const { x, y } = this.path.shift();
+
+        const deltaX = x - lastX;
+        const deltaY = y - lastY;
+
+        let timeout = STEP_TIMEOUT;
+
+        if (Math.abs(deltaX) === 1 && Math.abs(deltaY) === 1) {
+            timeout *= 1.50;
+        }
 
         this.move(x, y);
 
-        this.stepTimeout = setTimeout(this.step.bind(this), 250);
+        this.stepTimeout = setTimeout(this.step.bind(this), timeout);
     }
 
     walkTo(x, y) {
-        if (this.stepTimeout) {
-            clearTimeout(this.stepTimeout);
-        }
+        this.room.easystar.findPath(this.x, this.y, x, y, (path) => {
+            if (!path) {
+                return;
+            }
 
-        this.room.easystar.findPath(
-            this.x,
-            this.y,
-            x,
-            y,
-            (path) => {
-                if (!path) {
-                    return;
+            this.path = path;
+            this.path.shift();
+
+            if (this.isWalking) {
+                if (this.stepTimeout) {
+                    clearTimeout(this.stepTimeout);
                 }
 
-                this.path = path;
-                this.path.shift();
-
+                this.stepTimeout = setTimeout(
+                    this.step.bind(this),
+                    STEP_TIMEOUT
+                );
+            } else {
                 this.isWalking = true;
-
-                this.stepTimeout = setTimeout(this.step.bind(this), 250);
+                this.step();
             }
-        );
-
+        });
     }
 
     chat(message) {
