@@ -1,0 +1,36 @@
+BEGIN TRANSACTION;
+CREATE TABLE IF NOT EXISTS "rooms" (
+	"id"	INTEGER,
+	"owner_id"	INTEGER NOT NULL,
+	"name"	TEXT NOT NULL,
+	FOREIGN KEY("owner_id") REFERENCES "characters"("id"),
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+CREATE TABLE IF NOT EXISTS "chat" (
+	"id"	INTEGER,
+	"chatacter_id"	INTEGER NOT NULL,
+	"room_id"	INTEGER NOT NULL,
+	"colour"	TEXT,
+	"x"	INTEGER NOT NULL DEFAULT 0,
+	"y"	INTEGER NOT NULL DEFAULT 0,
+	"message"	TEXT NOT NULL DEFAULT '',
+	FOREIGN KEY("room_id") REFERENCES "rooms"("id"),
+	FOREIGN KEY("chatacter_id") REFERENCES "characters"("id"),
+	PRIMARY KEY("id")
+);
+CREATE TABLE IF NOT EXISTS "characters" (
+	"id"	INTEGER,
+	"username"	TEXT NOT NULL UNIQUE,
+	"password"	TEXT NOT NULL,
+	"email"	TEXT NOT NULL DEFAULT '',
+	"register_date"	INTEGER NOT NULL DEFAULT 0,
+	"register_ip"	TEXT,
+	"rank"	INTEGER NOT NULL DEFAULT 0,
+	"decibels"	INTEGER NOT NULL DEFAULT 0,
+	"is_female"	INTEGER NOT NULL DEFAULT 0,
+	"skin_shade"	INTEGER NOT NULL DEFAULT 0,
+	"head_type"	INTEGER NOT NULL DEFAULT 0,
+	"hair_type"	INTEGER NOT NULL DEFAULT 0,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+COMMIT;

@@ -2,9 +2,9 @@
   "name": "coke-music-server",
   "version": "1.0.0",
   "description": "coke music game server remake",
-  "main": "index.js",
+  "main": "./src/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node app | garnish"
   },
   "repository": {
     "type": "git",
@@ -25,7 +25,10 @@
   "homepage": "https://github.com/misterhat/coke-music-server#readme",
   "dependencies": {
     "@misterhat/easystarjs": "^0.5.3",
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^7.4.3",
     "bole": "^4.0.0",
+    "camelcase-keys": "^7.0.1",
     "garnish": "^5.2.0",
     "ws": "^8.2.3"
   }
