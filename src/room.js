@@ -44,6 +44,7 @@ class Room {
         newCharacter.y = this.exit.y;
 
         newCharacter.room = this;
+
         this.characters.add(newCharacter);
 
         setTimeout(() => {

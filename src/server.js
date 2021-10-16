@@ -22,7 +22,7 @@ class Server {
         this.queryHandler = new QueryHandler(this.database);
 
         // characters currently connected
-        this.characters = new Set();
+        this.characters = new Map();
 
         // all of the rooms from the database
         this.rooms = new Map();
@@ -32,6 +32,7 @@ class Server {
             studio: 'Test',
             name: 'studio_a'
         });
+
         this.rooms.set(0, studioA);
     }
 
@@ -79,12 +80,24 @@ class Server {
                         break;
                     }
 
+                    if (this.characters.get(data.id)) {
+                        socket.send(
+                            JSON.stringify({
+                                type: 'login-response',
+                                success: false,
+                                message: 'Character already logged in.'
+                            })
+                        );
+
+                        break;
+                    }
+
                     const character = new Character(this, camelcaseKeys(data));
 
                     character.socket = socket;
                     socket.character = character;
 
-                    this.characters.add(character);
+                    this.characters.set(data.id, character);
 
                     socket.send(
                         JSON.stringify({
@@ -291,8 +304,12 @@ class Server {
             socket.on('close', () => {
                 log.info(`client disconnected from ${socket.ip}`);
 
-                if (socket.character && socket.character.room) {
-                    socket.character.exitRoom();
+                if (socket.character) {
+                    this.characters.delete(socket.character.id);
+
+                    if (socket.character.room) {
+                        socket.character.exitRoom();
+                    }
                 }
             });
         });
