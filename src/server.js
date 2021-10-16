@@ -21,15 +21,43 @@ class Server {
         this.database = new Database(databaseFile || './coke-music.sqlite');
         this.queryHandler = new QueryHandler(this.database);
 
+        // characters currently connected
         this.characters = new Set();
+
+        // all of the rooms from the database
         this.rooms = new Map();
 
-        const studioA = new Room(this, { id: 0, name: 'studio_a' });
+        const studioA = new Room(this, {
+            id: 0,
+            studio: 'Test',
+            name: 'studio_a'
+        });
         this.rooms.set(0, studioA);
+    }
+
+    loadRooms() {
+        const rooms = this.queryHandler.getRooms();
+
+        for (const roomData of rooms) {
+            roomData.ownerID = roomData.ownerId;
+            delete roomData.ownerId;
+
+            const room = new Room(this, roomData);
+            this.rooms.set(room.id, room);
+        }
     }
 
     async handleMessage(socket, message) {
         try {
+            if (
+                message.type !== 'login' &&
+                message.type !== 'register' &&
+                !socket.character
+            ) {
+                log.error('no character for socket');
+                return;
+            }
+
             switch (message.type) {
                 case 'login': {
                     const data = this.queryHandler.getCharacter(
@@ -58,11 +86,13 @@ class Server {
 
                     this.characters.add(character);
 
-                    socket.send(JSON.stringify({
-                        type: 'login-response',
-                        id: character.id,
-                        success: true
-                    }));
+                    socket.send(
+                        JSON.stringify({
+                            type: 'login-response',
+                            id: character.id,
+                            success: true
+                        })
+                    );
                     break;
                 }
                 case 'register': {
@@ -120,6 +150,7 @@ class Server {
                     for (const [id, room] of this.rooms.entries()) {
                         rooms.push({
                             id,
+                            studio: room.studio,
                             name: room.name,
                             characterCount: room.characters.size,
                             ownerID: room.ownerID
@@ -129,6 +160,7 @@ class Server {
                     socket.send(JSON.stringify({ type: 'rooms', rooms }));
                     break;
                 }
+
                 case 'join-room': {
                     const room = this.rooms.get(message.id);
 
@@ -139,14 +171,13 @@ class Server {
 
                     const { character } = socket;
 
-                    if (!character) {
-                        log.error('no character for socket');
+                    if (character.room === room) {
+                        log.error('already in room');
                         return;
                     }
 
                     if (character.room) {
-                        log.error('already in room');
-                        return;
+                        character.exitRoom();
                     }
 
                     socket.send(
@@ -159,13 +190,49 @@ class Server {
                     room.addCharacter(socket.character);
                     break;
                 }
-                case 'walk': {
+                case 'create-room': {
                     const { character } = socket;
 
-                    if (!character) {
-                        log.error('no character for socket');
-                        break;
+                    if (character.room) {
+                        log.error('already in room');
+                        return;
                     }
+
+                    const studio = `${character.username}'s Studio`;
+                    const name = 'studio_a';
+
+                    const id = this.queryHandler.insertRoom({
+                        owner_id: character.id,
+                        studio,
+                        name
+                    });
+
+                    const room = new Room(this, {
+                        id,
+                        studio,
+                        name
+                    });
+
+                    this.rooms.set(id, room);
+
+                    await this.handleMessage(socket, { type: 'join-room', id });
+                    break;
+                }
+                case 'leave-room': {
+                    const { character } = socket;
+
+                    if (!character.room) {
+                        log.error('not in room');
+                        return;
+                    }
+
+                    character.exitRoom();
+
+                    break;
+                }
+
+                case 'walk': {
+                    const { character } = socket;
 
                     if (!character.room) {
                         log.error('character not in room');
@@ -177,11 +244,6 @@ class Server {
                 }
                 case 'chat': {
                     const { character } = socket;
-
-                    if (!character) {
-                        log.error('no character for socket');
-                        break;
-                    }
 
                     if (!character.room) {
                         log.error('character not in room');
@@ -201,10 +263,17 @@ class Server {
     }
 
     start() {
+        this.loadRooms();
+
         log.info(`listening for websocket connections on port ${this.port}`);
 
-        this.server.on('connection', (socket) => {
-            socket.ip = socket._socket.remoteAddress;
+        this.server.on('connection', (socket, req) => {
+            // running behind reverse-proxy with nginx
+            if (this.trustProxy) {
+                socket.ip = req.headers['x-forwarded-for'].split(',')[0].trim();
+            } else {
+                socket.ip = req.socket.remoteAddress;
+            }
 
             log.info(`client connected from ${socket.ip}`);
 
@@ -220,6 +289,8 @@ class Server {
             });
 
             socket.on('close', () => {
+                log.info(`client disconnected from ${socket.ip}`);
+
                 if (socket.character && socket.character.room) {
                     socket.character.exitRoom();
                 }

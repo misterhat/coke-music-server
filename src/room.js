@@ -2,7 +2,7 @@ const EasyStar = require('@misterhat/easystarjs');
 const rooms = require('coke-music-data/rooms.json');
 
 class Room {
-    constructor(server, { id, name }) {
+    constructor(server, { id, ownerID, ownerName, studio, name }) {
         this.server = server;
 
         this.id = id;
@@ -11,6 +11,9 @@ class Room {
             throw new Error(`invalid room name ${name}`);
         }
 
+        this.ownerID = ownerID;
+        this.ownerName = ownerName;
+        this.studio = studio;
         this.name = name;
 
         Object.assign(this, rooms[name]);
@@ -21,13 +24,13 @@ class Room {
         this.easystar.setGrid(this.map);
         this.easystar.setAcceptableTiles([0]);
         this.easystar.enableDiagonals();
+        this.easystar.disableCornerCutting();
 
         this.characters = new Set();
-        this.ownerID = null;
 
         this.pathInterval = setInterval(() => {
             this.easystar.calculate();
-        }, 100);
+        }, 1000 / 30);
     }
 
     broadcast(message) {
@@ -78,6 +81,9 @@ class Room {
     encode() {
         return {
             id: this.id,
+            ownerID: this.ownerID,
+            ownerName: this.ownerName,
+            studio: this.studio,
             name: this.name,
             characters: Array.from(this.characters).map((character) => {
                 return {

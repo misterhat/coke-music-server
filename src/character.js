@@ -11,7 +11,9 @@ class Character {
         this.x = 0;
         this.y = 0;
 
-        this.isWalking = false;
+        // TODO angle
+
+        // when to send the next step
         this.stepTimeout = null;
     }
 
@@ -25,7 +27,6 @@ class Character {
     step() {
         if (!this.path.length) {
             this.stepTimeout = null;
-            this.isWalking = false;
             return;
         }
 
@@ -40,7 +41,7 @@ class Character {
         let timeout = STEP_TIMEOUT;
 
         if (Math.abs(deltaX) === 1 && Math.abs(deltaY) === 1) {
-            timeout *= 1.50;
+            timeout *= 1.5;
         }
 
         this.move(x, y);
@@ -49,7 +50,10 @@ class Character {
     }
 
     walkTo(x, y) {
-        // TODO wait for existing step
+        if (this.stepTimeout) {
+            return;
+        }
+
         this.room.easystar.findPath(this.x, this.y, x, y, (path) => {
             if (!path) {
                 return;
@@ -58,19 +62,7 @@ class Character {
             this.path = path;
             this.path.shift();
 
-            if (this.isWalking) {
-                if (this.stepTimeout) {
-                    clearTimeout(this.stepTimeout);
-                }
-
-                this.stepTimeout = setTimeout(
-                    this.step.bind(this),
-                    STEP_TIMEOUT
-                );
-            } else {
-                this.isWalking = true;
-                this.step();
-            }
+            this.step();
         });
     }
 
@@ -79,6 +71,9 @@ class Character {
     }
 
     exitRoom() {
+        clearTimeout(this.stepTimeout);
+        this.stepTimeout = null;
+
         this.room.removeCharacter(this);
     }
 }
