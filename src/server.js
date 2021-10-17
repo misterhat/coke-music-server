@@ -7,6 +7,8 @@ const camelcaseKeys = require('camelcase-keys');
 const log = require('bole')('server');
 const promisify = require('util').promisify;
 const rooms = require('coke-music-data/rooms.json');
+const tiles = require('coke-music-data/tiles.json').map(({ file }) => file);
+const walls = require('coke-music-data/walls.json').map(({ file }) => file);
 const { WebSocketServer } = require('ws');
 
 const bcryptCompare = promisify(bcrypt.compare);
@@ -28,13 +30,14 @@ class Server {
         // all of the rooms from the database
         this.rooms = new Map();
 
+        /*
         const studioA = new Room(this, {
             id: 0,
             studio: 'Test',
             name: 'studio_a'
         });
 
-        this.rooms.set(0, studioA);
+        this.rooms.set(0, studioA);*/
     }
 
     loadRooms() {
@@ -190,11 +193,6 @@ class Server {
                 case 'create-room': {
                     const { character } = socket;
 
-                    if (character.room) {
-                        log.error('already in room');
-                        break;
-                    }
-
                     const studio = `${character.username}'s Studio`;
                     const name = 'studio_a';
 
@@ -207,7 +205,9 @@ class Server {
                     const room = new Room(this, {
                         id,
                         studio,
-                        name
+                        name,
+                        ownerID: character.id,
+                        ownerName: character.username
                     });
 
                     this.rooms.set(id, room);
@@ -247,10 +247,18 @@ class Server {
                         break;
                     }
 
-                    const name = message.name;
+                    if (!rooms[message.name]) {
+                        log.error(`invalid room name ${message.name}`);
+                        break;
+                    }
 
-                    if (!rooms[name]) {
-                        log.error(`invalid room name ${name}`);
+                    if (message.tile && tiles.indexOf(message.tile) === -1) {
+                        log.error(`invalid tile ${message.tile}`);
+                        break;
+                    }
+
+                    if (message.wall && walls.indexOf(message.wall) === -1) {
+                        log.error(`invalid wall ${message.wall}`);
                         break;
                     }
 
@@ -262,6 +270,8 @@ class Server {
 
                     room.name = message.name;
                     room.studio = message.studio;
+                    room.tile = message.tile;
+                    room.wall = message.wall;
 
                     room.updateRoomType();
 
@@ -271,6 +281,22 @@ class Server {
                         character.joinRoom(room);
                     }
 
+                    break;
+                }
+                case 'delete-room': {
+                    const { character } = socket;
+
+                    if (
+                        !character.room ||
+                        character.room.ownerID !== character.id
+                    ) {
+                        log.error('not owner of room');
+                        break;
+                    }
+
+                    this.rooms.delete(character.room.id);
+                    character.room.remove();
+                    character.exitRoom();
                     break;
                 }
 

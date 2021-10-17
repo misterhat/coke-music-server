@@ -102,6 +102,10 @@ class Room {
         });
     }
 
+    remove() {
+        this.server.queryHandler.deleteRoom(this.id);
+    }
+
     encode() {
         return {
             id: this.id,

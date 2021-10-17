@@ -17,7 +17,8 @@ const STATEMENTS = {
         'ON `characters`.`id` = `rooms`.`owner_id`',
     updateRoom:
         'UPDATE `rooms` SET `name` = :name, `studio` = :studio, ' +
-        '`tile` = :tile, `wall` = :wall WHERE `id` = :id'
+        '`tile` = :tile, `wall` = :wall WHERE `id` = :id',
+    deleteRoom: 'DELETE FROM `rooms` WHERE `id` = ?'
 };
 
 class QueryHandler {
@@ -60,6 +61,11 @@ class QueryHandler {
     updateRoom(room) {
         this.statements.updateRoom.run(room);
     }
+
+    deleteRoom(id) {
+        this.statements.deleteRoom.run(id);
+    }
+
 }
 
 module.exports = QueryHandler;
