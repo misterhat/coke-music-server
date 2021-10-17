@@ -14,7 +14,10 @@ const STATEMENTS = {
     getRooms:
         'SELECT `rooms`.*, `characters`.`username` AS `owner_name` ' +
         'FROM `rooms` JOIN `characters` ' +
-        'ON `characters`.`id` = `rooms`.`owner_id`'
+        'ON `characters`.`id` = `rooms`.`owner_id`',
+    updateRoom:
+        'UPDATE `rooms` SET `name` = :name, `studio` = :studio, ' +
+        '`tile` = :tile, `wall` = :wall WHERE `id` = :id'
 };
 
 class QueryHandler {
@@ -52,6 +55,10 @@ class QueryHandler {
         return this.statements.getRooms
             .all()
             .map((room) => camelcaseKeys(room));
+    }
+
+    updateRoom(room) {
+        this.statements.updateRoom.run(room);
     }
 }
 

@@ -1,3 +1,5 @@
+const log = require('bole')('character');
+
 const STEP_TIMEOUT = 500;
 
 class Character {
@@ -15,13 +17,21 @@ class Character {
 
         // when to send the next step
         this.stepTimeout = null;
+
+        this.exitTimeout = null;
     }
 
     move(x, y) {
+        clearTimeout(this.exitTimeout);
+
         this.x = x;
         this.y = y;
 
         this.room.moveCharacter(this, x, y);
+
+        if (this.x === this.room.exit.x && this.y === this.room.exit.y) {
+            this.exitTimeout = setTimeout(this.exitRoom.bind(this), 750);
+        }
     }
 
     step() {
@@ -68,6 +78,26 @@ class Character {
 
     chat(message) {
         this.room.chat(this, message);
+    }
+
+    joinRoom(room) {
+        if (this.room === room) {
+            log.error('already in room');
+            return;
+        }
+
+        if (this.room) {
+            this.exitRoom();
+        }
+
+        this.socket.send(
+            JSON.stringify({
+                type: 'join-room',
+                ...room.encode()
+            })
+        );
+
+        room.addCharacter(this);
     }
 
     exitRoom() {

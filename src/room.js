@@ -2,7 +2,7 @@ const EasyStar = require('@misterhat/easystarjs');
 const rooms = require('coke-music-data/rooms.json');
 
 class Room {
-    constructor(server, { id, ownerID, ownerName, studio, name }) {
+    constructor(server, { id, ownerID, ownerName, studio, name, wall, tile }) {
         this.server = server;
 
         this.id = id;
@@ -15,22 +15,28 @@ class Room {
         this.ownerName = ownerName;
         this.studio = studio;
         this.name = name;
+        this.tile = tile;
+        this.wall = wall;
 
-        Object.assign(this, rooms[name]);
+        this.updateRoomType();
 
         // TODO clone this.map into obstacle map and add players
-
-        this.easystar = new EasyStar.js();
-        this.easystar.setGrid(this.map);
-        this.easystar.setAcceptableTiles([0]);
-        this.easystar.enableDiagonals();
-        this.easystar.disableCornerCutting();
 
         this.characters = new Set();
 
         this.pathInterval = setInterval(() => {
             this.easystar.calculate();
         }, 1000 / 30);
+    }
+
+    updateRoomType() {
+        Object.assign(this, rooms[this.name]);
+
+        this.easystar = new EasyStar.js();
+        this.easystar.setGrid(this.map);
+        this.easystar.setAcceptableTiles([0]);
+        this.easystar.enableDiagonals();
+        this.easystar.disableCornerCutting();
     }
 
     broadcast(message) {
@@ -60,9 +66,9 @@ class Room {
 
     removeCharacter(character) {
         character.room = null;
-        this.characters.delete(character);
 
         this.broadcast({ type: 'remove-character', id: character.id });
+        this.characters.delete(character);
     }
 
     moveCharacter(character, x, y) {
@@ -79,6 +85,23 @@ class Room {
         });
     }
 
+    // remove all of the characters from the room
+    clear() {
+        for (const character of this.characters) {
+            character.exitRoom();
+        }
+    }
+
+    save() {
+        this.server.queryHandler.updateRoom({
+            id: this.id,
+            name: this.name,
+            studio: this.studio,
+            tile: this.tile,
+            wall: this.carpet
+        });
+    }
+
     encode() {
         return {
             id: this.id,
@@ -86,6 +109,8 @@ class Room {
             ownerName: this.ownerName,
             studio: this.studio,
             name: this.name,
+            wall: this.wall,
+            tile: this.tile,
             characters: Array.from(this.characters).map((character) => {
                 return {
                     id: character.id,

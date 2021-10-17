@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs');
 const camelcaseKeys = require('camelcase-keys');
 const log = require('bole')('server');
 const promisify = require('util').promisify;
+const rooms = require('coke-music-data/rooms.json');
 const { WebSocketServer } = require('ws');
 
 const bcryptCompare = promisify(bcrypt.compare);
@@ -182,25 +183,8 @@ class Server {
                         break;
                     }
 
-                    const { character } = socket;
+                    socket.character.joinRoom(room);
 
-                    if (character.room === room) {
-                        log.error('already in room');
-                        return;
-                    }
-
-                    if (character.room) {
-                        character.exitRoom();
-                    }
-
-                    socket.send(
-                        JSON.stringify({
-                            type: 'join-room',
-                            ...room.encode()
-                        })
-                    );
-
-                    room.addCharacter(socket.character);
                     break;
                 }
                 case 'create-room': {
@@ -208,7 +192,7 @@ class Server {
 
                     if (character.room) {
                         log.error('already in room');
-                        return;
+                        break;
                     }
 
                     const studio = `${character.username}'s Studio`;
@@ -236,10 +220,56 @@ class Server {
 
                     if (!character.room) {
                         log.error('not in room');
-                        return;
+                        break;
                     }
 
                     character.exitRoom();
+
+                    break;
+                }
+
+                // save changes made in the studio settings
+                case 'save-room': {
+                    const { character } = socket;
+
+                    if (
+                        !character.room ||
+                        character.room.ownerID !== character.id
+                    ) {
+                        log.error('not owner of room');
+                        break;
+                    }
+
+                    const studio = message.studio;
+
+                    if (studio.length > 50) {
+                        log.error('studio name too long');
+                        break;
+                    }
+
+                    const name = message.name;
+
+                    if (!rooms[name]) {
+                        log.error(`invalid room name ${name}`);
+                        break;
+                    }
+
+                    const { room } = character;
+
+                    const oldCharacters = new Set(room.characters);
+
+                    room.clear();
+
+                    room.name = message.name;
+                    room.studio = message.studio;
+
+                    room.updateRoomType();
+
+                    room.save();
+
+                    for (const character of oldCharacters) {
+                        character.joinRoom(room);
+                    }
 
                     break;
                 }
