@@ -322,8 +322,6 @@ class Server {
                         break;
                     }
 
-                    // TODO also check width/height of obstacle map
-
                     const object = new GameObject(this, {
                         name: message.name,
                         x: message.x,
@@ -336,6 +334,62 @@ class Server {
 
                     character.save();
 
+                    break;
+                }
+
+                case 'pick-up-object':
+                case 'remove-object': {
+                    const { character } = socket;
+
+                    if (!isRoomOwner(character, character.room)) {
+                        log.error('not room owner');
+                        break;
+                    }
+
+                    const { room } = character;
+
+                    const object = room.getObject(
+                        message.x,
+                        message.y,
+                        message.name
+                    );
+
+                    if (object) {
+                        room.removeObject(object);
+                        room.save();
+
+                        if (message.type === 'pick-up-object') {
+                            character.addItem('furniture', message.name);
+                            character.save();
+                        }
+                    }
+                    break;
+                }
+
+                case 'rotate-object': {
+                    const { character } = socket;
+
+                    if (!isRoomOwner(character, character.room)) {
+                        log.error('not room owner');
+                        break;
+                    }
+
+                    const { room } = character;
+
+                    const object = room.getObject(
+                        message.x,
+                        message.y,
+                        message.name
+                    );
+
+                    if (object) {
+                        room.removeObject(object);
+                        object.rotate();
+                        room.addObject(object);
+                        // TODO could put this on a debouncer
+                        // roomSaveTimeout = setTimeout(clearTimeout, room.save, 1000)
+                        room.save();
+                    }
                     break;
                 }
 

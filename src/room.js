@@ -81,7 +81,7 @@ class Room {
 
         this.characters.add(newCharacter);
 
-        this.obstacleMap[this.exit.y][this.exit.x] = 1;
+        this.obstacleMap[this.exit.y][this.exit.x] = newCharacter;
 
         setTimeout(() => {
             this.broadcast({
@@ -113,15 +113,48 @@ class Room {
     addObject(object) {
         this.objects.push(object);
 
-        const tileWidth =
-            object.angle <= 1 ? object.tileWidth : object.tileHeight;
-
-        const tileHeight =
-            object.angle <= 1 ? object.tileHeight : object.tileWidth;
-
-        for (let y = object.y; y < object.y + tileHeight; y += 1) {
-            for (let x = object.x; x < object.x + tileWidth; x += 1) {
+        for (let y = object.y; y < object.y + object.getTileHeight(); y += 1) {
+            for (
+                let x = object.x;
+                x < object.x + object.getTileWidth();
+                x += 1
+            ) {
                 this.obstacleMap[y][x] = object;
+            }
+        }
+
+        // TODO broadcast to the users who aren't the owner
+    }
+
+    removeObject(object) {
+        for (let i = 0; i < this.objects.length; i += 1) {
+            if (this.objects[i] === object) {
+                this.objects.splice(i, 1);
+                break;
+            }
+        }
+
+        for (let y = object.y; y < object.y + object.getTileHeight(); y += 1) {
+            for (
+                let x = object.x;
+                x < object.x + object.getTileWidth();
+                x += 1
+            ) {
+                this.obstacleMap[y][x] = 0;
+            }
+        }
+
+        // TODO broadcast to the users who aren't the owner
+    }
+
+    getObject(x, y, name) {
+        for (const object of this.objects) {
+            if (
+                object.x === x &&
+                object.y === y &&
+                object.name === name
+            ) {
+                return object;
             }
         }
     }

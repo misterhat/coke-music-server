@@ -13,6 +13,18 @@ class GameObject {
         this.angle = angle || 0;
     }
 
+    getTileWidth() {
+        return this.angle <= 1 ? this.tileWidth : this.tileHeight;
+    }
+
+    getTileHeight() {
+        return this.angle <= 1 ? this.tileHeight : this.tileWidth;
+    }
+
+    rotate() {
+        this.angle = (this.angle + 1) % this.angles;
+    }
+
     toJSON() {
         return {
             name: this.name,
