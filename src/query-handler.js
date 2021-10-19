@@ -7,6 +7,8 @@ const STATEMENTS = {
         '(`username`, `password`, `register_date`, `register_ip`) ' +
         'VALUES (:username, :password, :date, :ip)',
     getCharacter: 'SELECT * FROM `characters` WHERE `username` = ? LIMIT 1',
+    updateCharacter:
+        'UPDATE `characters` SET `inventory` = :inventory WHERE `id` = :id',
     insertRoom:
         'INSERT INTO `rooms` (`owner_id`, `studio`, `name`) ' +
         'VALUES (:owner_id, :studio, :name)',
@@ -17,7 +19,8 @@ const STATEMENTS = {
         'ON `characters`.`id` = `rooms`.`owner_id`',
     updateRoom:
         'UPDATE `rooms` SET `name` = :name, `studio` = :studio, ' +
-        '`tile` = :tile, `wall` = :wall WHERE `id` = :id',
+        '`tile` = :tile, `wall` = :wall, `objects` = :objects ' +
+        'WHERE `id` = :id',
     deleteRoom: 'DELETE FROM `rooms` WHERE `id` = ?'
 };
 
@@ -43,7 +46,20 @@ class QueryHandler {
     }
 
     getCharacter(username) {
-        return this.statements.getCharacter.get(username);
+        const character = camelcaseKeys(
+            this.statements.getCharacter.get(username)
+        );
+
+        character.inventory = JSON.parse(character.inventory);
+
+        return character;
+    }
+
+    updateCharacter(character) {
+        this.statements.updateCharacter.run({
+            inventory: JSON.stringify(character.inventory),
+            id: character.id
+        });
     }
 
     insertRoom(room) {
@@ -65,7 +81,6 @@ class QueryHandler {
     deleteRoom(id) {
         this.statements.deleteRoom.run(id);
     }
-
 }
 
 module.exports = QueryHandler;

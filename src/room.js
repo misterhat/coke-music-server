@@ -2,7 +2,18 @@ const EasyStar = require('@misterhat/easystarjs');
 const rooms = require('coke-music-data/rooms.json');
 
 class Room {
-    constructor(server, { id, ownerID, ownerName, studio, name, wall, tile }) {
+    constructor(server, data) {
+        const {
+            id,
+            ownerID,
+            ownerName,
+            studio,
+            name,
+            wall,
+            tile,
+            objects
+        } = data;
+
         this.server = server;
 
         this.id = id;
@@ -20,9 +31,8 @@ class Room {
 
         this.updateRoomType();
 
-        // TODO clone this.map into obstacle map and add players
-
         this.characters = new Set();
+        this.objects = JSON.parse(objects);
 
         this.pathInterval = setInterval(() => {
             this.easystar.calculate();
@@ -32,8 +42,21 @@ class Room {
     updateRoomType() {
         Object.assign(this, rooms[this.name]);
 
+        this.width = this.map[0].length;
+        this.height = this.map.length;
+
+        this.obstacleMap = [];
+
+        for (let y = 0; y < this.height; y += 1) {
+            this.obstacleMap.push([]);
+
+            for (let x = 0; x < this.width; x += 1) {
+                this.obstacleMap[y][x] = this.map[y][x];
+            }
+        }
+
         this.easystar = new EasyStar.js();
-        this.easystar.setGrid(this.map);
+        this.easystar.setGrid(this.obstacleMap);
         this.easystar.setAcceptableTiles([0]);
         this.easystar.enableDiagonals();
         this.easystar.disableCornerCutting();
@@ -48,10 +71,11 @@ class Room {
     addCharacter(newCharacter) {
         newCharacter.x = this.exit.x;
         newCharacter.y = this.exit.y;
-
         newCharacter.room = this;
 
         this.characters.add(newCharacter);
+
+        this.obstacleMap[this.exit.y][this.exit.x] = 1;
 
         setTimeout(() => {
             this.broadcast({
@@ -67,12 +91,22 @@ class Room {
     removeCharacter(character) {
         character.room = null;
 
+        this.obstacleMap[character.y][character.x] = 0;
+
         this.broadcast({ type: 'remove-character', id: character.id });
         this.characters.delete(character);
     }
 
     moveCharacter(character, x, y) {
+        this.obstacleMap[character.y][character.x] = 0;
+        this.obstacleMap[y][x] = 1;
+
         this.broadcast({ type: 'move-character', id: character.id, x, y });
+    }
+
+    addObject(object) {
+        this.objects.push(object);
+        this.save();
     }
 
     chat(character, message) {
@@ -98,7 +132,8 @@ class Room {
             name: this.name,
             studio: this.studio,
             tile: this.tile,
-            wall: this.carpet
+            wall: this.carpet,
+            objects: JSON.stringify(this.objects)
         });
     }
 
@@ -122,7 +157,8 @@ class Room {
                     x: character.x,
                     y: character.y
                 };
-            })
+            }),
+            objects: this.objects
         };
     }
 }

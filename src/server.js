@@ -14,6 +14,10 @@ const { WebSocketServer } = require('ws');
 const bcryptCompare = promisify(bcrypt.compare);
 const bcryptHash = promisify(bcrypt.hash);
 
+function isRoomOwner(character, room) {
+    return character.room && character.room.ownerID == character.id;
+}
+
 class Server {
     constructor({ port, databaseFile, hashRounds, trustProxy }) {
         this.port = port || 43594;
@@ -96,7 +100,7 @@ class Server {
                         break;
                     }
 
-                    const character = new Character(this, camelcaseKeys(data));
+                    const character = new Character(this, data);
 
                     character.socket = socket;
                     socket.character = character;
@@ -110,8 +114,11 @@ class Server {
                             success: true
                         })
                     );
+
+                    character.sendInventory();
                     break;
                 }
+
                 case 'register': {
                     const { username, password, email } = message;
 
@@ -161,6 +168,7 @@ class Server {
                     );
                     break;
                 }
+
                 case 'get-rooms': {
                     const rooms = [];
 
@@ -190,6 +198,7 @@ class Server {
 
                     break;
                 }
+
                 case 'create-room': {
                     const { character } = socket;
 
@@ -215,6 +224,7 @@ class Server {
                     await this.handleMessage(socket, { type: 'join-room', id });
                     break;
                 }
+
                 case 'leave-room': {
                     const { character } = socket;
 
@@ -232,11 +242,8 @@ class Server {
                 case 'save-room': {
                     const { character } = socket;
 
-                    if (
-                        !character.room ||
-                        character.room.ownerID !== character.id
-                    ) {
-                        log.error('not owner of room');
+                    if (!isRoomOwner(character, character.room)) {
+                        log.error('not room owner');
                         break;
                     }
 
@@ -274,7 +281,6 @@ class Server {
                     room.wall = message.wall;
 
                     room.updateRoomType();
-
                     room.save();
 
                     for (const character of oldCharacters) {
@@ -283,20 +289,45 @@ class Server {
 
                     break;
                 }
+
                 case 'delete-room': {
                     const { character } = socket;
 
-                    if (
-                        !character.room ||
-                        character.room.ownerID !== character.id
-                    ) {
-                        log.error('not owner of room');
+                    if (!isRoomOwner(character, character.room)) {
+                        log.error('not room owner');
                         break;
                     }
 
                     this.rooms.delete(character.room.id);
                     character.room.remove();
                     character.exitRoom();
+                    break;
+                }
+
+                case 'add-object': {
+                    const { character } = socket;
+
+                    if (!isRoomOwner(character, character.room)) {
+                        log.error('not room owner');
+                        break;
+                    }
+
+                    // TODO bounds check
+
+                    if (!character.removeItem('furniture', message.name)) {
+                        log.error('character does not have item');
+                        break;
+                    }
+
+                    character.room.addObject({
+                        name: message.name,
+                        x: message.x,
+                        y: message.y,
+                        angle: 0
+                    });
+
+                    character.save();
+
                     break;
                 }
 
@@ -311,6 +342,7 @@ class Server {
                     character.walkTo(message.x, message.y);
                     break;
                 }
+
                 case 'chat': {
                     const { character } = socket;
 
@@ -322,6 +354,19 @@ class Server {
                     character.chat(message.message);
                     break;
                 }
+
+                case 'command': {
+                    // TODO check ranks
+
+                    if (message.command === 'item') {
+                        socket.character.addItem(
+                            message.args[0],
+                            message.args[1]
+                        );
+                    }
+                    break;
+                }
+
                 default:
                     log.error('unhandled message', message);
                     break;
