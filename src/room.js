@@ -1,4 +1,5 @@
 const EasyStar = require('@misterhat/easystarjs');
+const GameObject = require('./game-object');
 const rooms = require('coke-music-data/rooms.json');
 
 class Room {
@@ -32,7 +33,12 @@ class Room {
         this.updateRoomType();
 
         this.characters = new Set();
-        this.objects = JSON.parse(objects);
+
+        this.objects = [];
+
+        for (const data of JSON.parse(objects)) {
+            this.addObject(new GameObject(this.server, data));
+        }
 
         this.pathInterval = setInterval(() => {
             this.easystar.calculate();
@@ -106,7 +112,18 @@ class Room {
 
     addObject(object) {
         this.objects.push(object);
-        this.save();
+
+        const tileWidth =
+            object.angle <= 1 ? object.tileWidth : object.tileHeight;
+
+        const tileHeight =
+            object.angle <= 1 ? object.tileHeight : object.tileWidth;
+
+        for (let y = object.y; y < object.y + tileHeight; y += 1) {
+            for (let x = object.x; x < object.x + tileWidth; x += 1) {
+                this.obstacleMap[y][x] = object;
+            }
+        }
     }
 
     chat(character, message) {
@@ -141,7 +158,7 @@ class Room {
         this.server.queryHandler.deleteRoom(this.id);
     }
 
-    encode() {
+    toJSON() {
         return {
             id: this.id,
             ownerID: this.ownerID,
@@ -151,12 +168,7 @@ class Room {
             wall: this.wall,
             tile: this.tile,
             characters: Array.from(this.characters).map((character) => {
-                return {
-                    id: character.id,
-                    username: character.username,
-                    x: character.x,
-                    y: character.y
-                };
+                return character.toJSON();
             }),
             objects: this.objects
         };

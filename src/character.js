@@ -2,6 +2,26 @@ const log = require('bole')('character');
 
 const STEP_TIMEOUT = 500;
 
+// [deltaX][deltaY] = spriteOffset
+// to determine which direction should display which sprite
+const WALK_ANGLE_DELTAS = {
+    '-1': {
+        1: 1,
+        '-1': 3,
+        0: 2
+    },
+    1: {
+        1: 4,
+        '-1': 6,
+        0: 5
+    },
+    0: {
+        1: 0,
+        '-1': 7,
+        0: 3
+    }
+};
+
 class Character {
     constructor(server, { id, username, inventory }) {
         this.server = server;
@@ -12,7 +32,6 @@ class Character {
 
         this.room = null;
 
-        // TODO angle
         this.angle = 0;
         this.x = 0;
         this.y = 0;
@@ -28,6 +47,10 @@ class Character {
 
         this.room.moveCharacter(this, x, y);
 
+        const deltaX = this.x - x;
+        const deltaY = this.y - y;
+
+        this.angle = WALK_ANGLE_DELTAS[deltaX][deltaY];
         this.x = x;
         this.y = y;
 
@@ -93,10 +116,7 @@ class Character {
         }
 
         this.socket.send(
-            JSON.stringify({
-                type: 'join-room',
-                ...room.encode()
-            })
+            JSON.stringify({ type: 'join-room', ...room.toJSON() })
         );
 
         room.addCharacter(this);
@@ -153,6 +173,15 @@ class Character {
         this.server.queryHandler.updateCharacter(this);
     }
 
+    toJSON() {
+        return {
+            id: this.id,
+            username: this.username,
+            angle: this.angle,
+            x: this.x,
+            y: this.y
+        };
+    }
 }
 
 module.exports = Character;

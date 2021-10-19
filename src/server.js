@@ -10,6 +10,7 @@ const rooms = require('coke-music-data/rooms.json');
 const tiles = require('coke-music-data/tiles.json').map(({ file }) => file);
 const walls = require('coke-music-data/walls.json').map(({ file }) => file);
 const { WebSocketServer } = require('ws');
+const GameObject = require('./game-object');
 
 const bcryptCompare = promisify(bcrypt.compare);
 const bcryptHash = promisify(bcrypt.hash);
@@ -33,15 +34,6 @@ class Server {
 
         // all of the rooms from the database
         this.rooms = new Map();
-
-        /*
-        const studioA = new Room(this, {
-            id: 0,
-            studio: 'Test',
-            name: 'studio_a'
-        });
-
-        this.rooms.set(0, studioA);*/
     }
 
     loadRooms() {
@@ -312,19 +304,35 @@ class Server {
                         break;
                     }
 
-                    // TODO bounds check
+                    const { room } = character;
+
+                    if (
+                        message.x < 0 ||
+                        message.x > room.width ||
+                        message.y < 0 ||
+                        message.y > room.height ||
+                        room.obstacleMap[message.y][message.x]
+                    ) {
+                        log.error('out of bounds');
+                        break;
+                    }
 
                     if (!character.removeItem('furniture', message.name)) {
                         log.error('character does not have item');
                         break;
                     }
 
-                    character.room.addObject({
+                    // TODO also check width/height of obstacle map
+
+                    const object = new GameObject(this, {
                         name: message.name,
                         x: message.x,
                         y: message.y,
                         angle: 0
                     });
+
+                    room.addObject(object);
+                    room.save();
 
                     character.save();
 
@@ -363,6 +371,8 @@ class Server {
                             message.args[0],
                             message.args[1]
                         );
+
+                        socket.character.save();
                     }
                     break;
                 }
