@@ -23,12 +23,10 @@ const WALK_ANGLE_DELTAS = {
 };
 
 class Character {
-    constructor(server, { id, username, inventory }) {
+    constructor(server, data) {
         this.server = server;
 
-        this.username = username;
-        this.id = id;
-        this.inventory = inventory;
+        Object.assign(this, data);
 
         this.room = null;
 
@@ -36,10 +34,16 @@ class Character {
         this.x = 0;
         this.y = 0;
 
+        this.setAppearance(data);
+
         // when to send the next step
         this.stepTimeout = null;
 
         this.exitTimeout = null;
+    }
+
+    isRoomOwner() {
+        return this.room && this.room.ownerID === this.id;
     }
 
     move(x, y) {
@@ -129,6 +133,10 @@ class Character {
         this.room.removeCharacter(this);
     }
 
+    sendAppearancePanel() {
+        this.socket.send(JSON.stringify({ type: 'appearance' }));
+    }
+
     sendInventory() {
         this.socket.send(
             JSON.stringify({ type: 'inventory', items: this.inventory })
@@ -169,6 +177,14 @@ class Character {
         return removed;
     }
 
+    setAppearance(appearance) {
+        Object.assign(this, appearance);
+
+        if (this.room) {
+            this.room.updateCharacterAppearance(this);
+        }
+    }
+
     save() {
         this.server.queryHandler.updateCharacter(this);
     }
@@ -179,7 +195,17 @@ class Character {
             username: this.username,
             angle: this.angle,
             x: this.x,
-            y: this.y
+            y: this.y,
+            faceIndex: this.faceIndex,
+            hairIndex: this.hairIndex,
+            hairColour: this.hairColour,
+            shirtIndex: this.shirtIndex,
+            shirtColour: this.shirtColour,
+            pantsIndex: this.pantsIndex,
+            pantsColour: this.pantsColour,
+            shoesIndex: this.shoesIndex,
+            shoesColour: this.shoesColour,
+            skinTone: this.skinTone
         };
     }
 }

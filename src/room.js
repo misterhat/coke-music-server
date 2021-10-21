@@ -86,10 +86,7 @@ class Room {
         setTimeout(() => {
             this.broadcast({
                 type: 'add-character',
-                username: newCharacter.username,
-                id: newCharacter.id,
-                x: newCharacter.x,
-                y: newCharacter.y
+                ...newCharacter.toJSON()
             });
         }, 250);
     }
@@ -108,6 +105,22 @@ class Room {
         this.obstacleMap[y][x] = 1;
 
         this.broadcast({ type: 'move-character', id: character.id, x, y });
+    }
+
+    updateCharacterAppearance(character) {
+        this.broadcast({
+            type: 'character-appearance',
+            id: character.id,
+            hairIndex: character.hairIndex,
+            hairColour: character.hairColour,
+            shirtIndex: character.shirtIndex,
+            shirtColour: character.shirtColour,
+            pantsIndex: character.pantsIndex,
+            pantsColour: character.pantsColour,
+            shoesIndex: character.shoesIndex,
+            shoesColour: character.shoesColour,
+            skinTone: character.skinTone
+        });
     }
 
     addObject(object) {
@@ -149,11 +162,7 @@ class Room {
 
     getObject(x, y, name) {
         for (const object of this.objects) {
-            if (
-                object.x === x &&
-                object.y === y &&
-                object.name === name
-            ) {
+            if (object.x === x && object.y === y && object.name === name) {
                 return object;
             }
         }

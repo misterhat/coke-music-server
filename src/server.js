@@ -15,10 +15,6 @@ const GameObject = require('./game-object');
 const bcryptCompare = promisify(bcrypt.compare);
 const bcryptHash = promisify(bcrypt.hash);
 
-function isRoomOwner(character, room) {
-    return character.room && character.room.ownerID == character.id;
-}
-
 class Server {
     constructor({ port, databaseFile, hashRounds, trustProxy }) {
         this.port = port || 43594;
@@ -103,7 +99,8 @@ class Server {
                         JSON.stringify({
                             type: 'login-response',
                             id: character.id,
-                            success: true
+                            success: true,
+                            ...character.toJSON()
                         })
                     );
 
@@ -234,7 +231,7 @@ class Server {
                 case 'save-room': {
                     const { character } = socket;
 
-                    if (!isRoomOwner(character, character.room)) {
+                    if (!character.isRoomOwner()) {
                         log.error('not room owner');
                         break;
                     }
@@ -285,7 +282,7 @@ class Server {
                 case 'delete-room': {
                     const { character } = socket;
 
-                    if (!isRoomOwner(character, character.room)) {
+                    if (!character.isRoomOwner()) {
                         log.error('not room owner');
                         break;
                     }
@@ -299,7 +296,7 @@ class Server {
                 case 'add-object': {
                     const { character } = socket;
 
-                    if (!isRoomOwner(character, character.room)) {
+                    if (!character.isRoomOwner()) {
                         log.error('not room owner');
                         break;
                     }
@@ -341,7 +338,7 @@ class Server {
                 case 'remove-object': {
                     const { character } = socket;
 
-                    if (!isRoomOwner(character, character.room)) {
+                    if (!character.isRoomOwner()) {
                         log.error('not room owner');
                         break;
                     }
@@ -369,7 +366,7 @@ class Server {
                 case 'rotate-object': {
                     const { character } = socket;
 
-                    if (!isRoomOwner(character, character.room)) {
+                    if (!character.isRoomOwner()) {
                         log.error('not room owner');
                         break;
                     }
@@ -417,16 +414,28 @@ class Server {
                     break;
                 }
 
+                // change character appearance
+                case 'appearance': {
+                    // TODO check colours and indexes
+                    const { character } = socket;
+                    character.setAppearance(message);
+                    character.save();
+                    break;
+                }
+
                 case 'command': {
                     // TODO check ranks
 
-                    if (message.command === 'item') {
-                        socket.character.addItem(
-                            message.args[0],
-                            message.args[1]
-                        );
+                    const { character } = socket;
 
-                        socket.character.save();
+                    switch (message.command) {
+                        case 'appearance':
+                            character.sendAppearancePanel();
+                            break;
+                        case 'item':
+                            character.addItem(message.args[0], message.args[1]);
+                            character.save();
+                            break;
                     }
                     break;
                 }
