@@ -26,7 +26,8 @@ const STATEMENTS = {
         'ON `characters`.`id` = `rooms`.`owner_id`',
     updateRoom:
         'UPDATE `rooms` SET `name` = :name, `studio` = :studio, ' +
-        '`tile` = :tile, `wall` = :wall, `objects` = :objects ' +
+        '`tile` = :tile, `wall` = :wall, `objects` = :objects, ' +
+        '`rugs` = :rugs ' +
         'WHERE `id` = :id',
     deleteRoom: 'DELETE FROM `rooms` WHERE `id` = ?'
 };

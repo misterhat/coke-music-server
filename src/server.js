@@ -11,6 +11,7 @@ const tiles = require('coke-music-data/tiles.json').map(({ file }) => file);
 const walls = require('coke-music-data/walls.json').map(({ file }) => file);
 const { WebSocketServer } = require('ws');
 const GameObject = require('./game-object');
+const Rug = require('./rug');
 
 const bcryptCompare = promisify(bcrypt.compare);
 const bcryptHash = promisify(bcrypt.hash);
@@ -261,6 +262,8 @@ class Server {
                     const { room } = character;
 
                     const oldCharacters = new Set(room.characters);
+                    const oldObjects = room.objects;
+                    const oldRugs = room.rugs;
 
                     room.clear();
 
@@ -270,6 +273,15 @@ class Server {
                     room.wall = message.wall;
 
                     room.updateRoomType();
+
+                    for (const object of oldObjects) {
+                        room.addObject(object);
+                    }
+
+                    for (const rug of oldRugs) {
+                        room.addRug(rug);
+                    }
+
                     room.save();
 
                     for (const character of oldCharacters) {
@@ -328,7 +340,6 @@ class Server {
 
                     room.addObject(object);
                     room.save();
-
                     character.save();
 
                     break;
@@ -387,6 +398,34 @@ class Server {
                         // roomSaveTimeout = setTimeout(clearTimeout, room.save, 1000)
                         room.save();
                     }
+                    break;
+                }
+
+                case 'add-rug': {
+                    const { character } = socket;
+
+                    if (!character.isRoomOwner()) {
+                        log.error('not room owner');
+                        break;
+                    }
+
+                    if (!character.removeItem('rugs', message.name)) {
+                        log.error('character does not have item');
+                        break;
+                    }
+
+                    const { room } = character;
+
+                    const rug = new Rug(this, {
+                        name: message.name,
+                        x: message.x,
+                        y: message.y
+                    });
+
+                    room.addRug(rug);
+                    room.save();
+                    character.save();
+
                     break;
                 }
 

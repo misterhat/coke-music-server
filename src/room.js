@@ -1,5 +1,6 @@
 const EasyStar = require('@misterhat/easystarjs');
 const GameObject = require('./game-object');
+const Rug = require('./rug');
 const rooms = require('coke-music-data/rooms.json');
 
 class Room {
@@ -12,7 +13,8 @@ class Room {
             name,
             wall,
             tile,
-            objects
+            objects,
+            rugs
         } = data;
 
         this.server = server;
@@ -35,9 +37,14 @@ class Room {
         this.characters = new Set();
 
         this.objects = [];
+        this.rugs = [];
 
         for (const data of JSON.parse(objects)) {
             this.addObject(new GameObject(this.server, data));
+        }
+
+        for (const data of JSON.parse(rugs)) {
+            this.addRug(new Rug(this.server, data));
         }
 
         this.pathInterval = setInterval(() => {
@@ -168,6 +175,10 @@ class Room {
         }
     }
 
+    addRug(rug) {
+        this.rugs.push(rug);
+    }
+
     chat(character, message) {
         this.broadcast({
             type: 'chat',
@@ -183,6 +194,8 @@ class Room {
         for (const character of this.characters) {
             character.exitRoom();
         }
+
+        this.objects = [];
     }
 
     save() {
@@ -191,8 +204,9 @@ class Room {
             name: this.name,
             studio: this.studio,
             tile: this.tile,
-            wall: this.carpet,
-            objects: JSON.stringify(this.objects)
+            wall: this.wall,
+            objects: JSON.stringify(this.objects),
+            rugs: JSON.stringify(this.rugs)
         });
     }
 
@@ -212,7 +226,8 @@ class Room {
             characters: Array.from(this.characters).map((character) => {
                 return character.toJSON();
             }),
-            objects: this.objects
+            objects: this.objects,
+            rugs: this.rugs
         };
     }
 }
