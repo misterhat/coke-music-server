@@ -471,10 +471,19 @@ class Server {
                         case 'appearance':
                             character.sendAppearancePanel();
                             break;
-                        case 'item':
-                            character.addItem(message.args[0], message.args[1]);
+                        case 'item': {
+                            let amount = Number(message.args[2]) || 1;
+
+                            for (let i = 0; i < amount; i += 1) {
+                                character.addItem(
+                                    message.args[0],
+                                    message.args[1]
+                                );
+                            }
+
                             character.save();
                             break;
+                        }
                     }
                     break;
                 }
