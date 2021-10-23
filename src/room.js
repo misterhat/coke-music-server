@@ -39,11 +39,11 @@ class Room {
         this.objects = [];
         this.rugs = [];
 
-        for (const data of JSON.parse(objects)) {
-            this.addObject(new GameObject(this.server, data));
+        for (const data of JSON.parse(objects || '[]')) {
+            this.addObject(new GameObject(this.server, this, data));
         }
 
-        for (const data of JSON.parse(rugs)) {
+        for (const data of JSON.parse(rugs || '[]')) {
             this.addRug(new Rug(this.server, data));
         }
 
@@ -59,12 +59,15 @@ class Room {
         this.height = this.map.length;
 
         this.obstacleMap = [];
+        this.objectMap = [];
 
         for (let y = 0; y < this.height; y += 1) {
             this.obstacleMap.push([]);
+            this.objectMap.push([]);
 
             for (let x = 0; x < this.width; x += 1) {
                 this.obstacleMap[y][x] = this.map[y][x];
+                this.objectMap[y][x] = null;
             }
         }
 
@@ -88,7 +91,8 @@ class Room {
 
         this.characters.add(newCharacter);
 
-        this.obstacleMap[this.exit.y][this.exit.x] = newCharacter;
+        this.obstacleMap[this.exit.y][this.exit.x] = 1;
+        this.objectMap[this.exit.y][this.exit.x] = newCharacter;
 
         setTimeout(() => {
             this.broadcast({
@@ -103,6 +107,10 @@ class Room {
 
         this.obstacleMap[character.y][character.x] = 0;
 
+        if (!character.isSitting) {
+            this.objectMap[character.y][character.x] = null;
+        }
+
         this.broadcast({ type: 'remove-character', id: character.id });
         this.characters.delete(character);
     }
@@ -110,6 +118,12 @@ class Room {
     moveCharacter(character, x, y) {
         this.obstacleMap[character.y][character.x] = 0;
         this.obstacleMap[y][x] = 1;
+
+        if (this.objectMap[character.y][character.x] === character) {
+            this.objectMap[character.y][character.x] = null;
+        }
+
+        this.objectMap[y][x] = character;
 
         this.broadcast({ type: 'move-character', id: character.id, x, y });
     }
@@ -130,6 +144,15 @@ class Room {
         });
     }
 
+    sitCharacter(character, x, y) {
+        this.broadcast({
+            type: 'character-sit',
+            id: character.id,
+            x,
+            y
+        });
+    }
+
     addObject(object) {
         this.objects.push(object);
 
@@ -139,7 +162,11 @@ class Room {
                 x < object.x + object.getTileWidth();
                 x += 1
             ) {
-                this.obstacleMap[y][x] = object;
+                //if (!object.sit) {
+                    this.obstacleMap[y][x] = 1;
+                //}
+
+                this.objectMap[y][x] = object;
             }
         }
 
@@ -160,7 +187,11 @@ class Room {
                 x < object.x + object.getTileWidth();
                 x += 1
             ) {
-                this.obstacleMap[y][x] = 0;
+                if (!object.sit) {
+                    this.obstacleMap[y][x] = 0;
+                }
+
+                this.objectMap[y][x] = null;
             }
         }
 
@@ -180,12 +211,15 @@ class Room {
     }
 
     chat(character, message) {
+        // TODO log chat
+
         this.broadcast({
             type: 'chat',
             id: character.id,
             message,
             x: character.x,
-            y: character.y
+            y: character.y,
+            colour: character.shirtColour
         });
     }
 
@@ -196,6 +230,7 @@ class Room {
         }
 
         this.objects = [];
+        this.rugs = [];
     }
 
     save() {

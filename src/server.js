@@ -331,15 +331,19 @@ class Server {
                         break;
                     }
 
-                    const object = new GameObject(this, {
+                    const object = new GameObject(this, character.room, {
                         name: message.name,
                         x: message.x,
                         y: message.y,
                         angle: 0
                     });
 
-                    room.addObject(object);
-                    room.save();
+                    // the checks this
+                    if (!object.isBlocked()) {
+                        room.addObject(object);
+                        room.save();
+                    }
+
                     character.save();
 
                     break;
@@ -392,11 +396,17 @@ class Server {
 
                     if (object) {
                         room.removeObject(object);
+
+                        const oldAngle = object.angle;
                         object.rotate();
-                        room.addObject(object);
-                        // TODO could put this on a debouncer
-                        // roomSaveTimeout = setTimeout(clearTimeout, room.save, 1000)
-                        room.save();
+
+                        if (!object.isBlocked()) {
+                            room.addObject(object);
+                            room.save();
+                        } else {
+                            object.angle = oldAngle;
+                            room.addObject(object);
+                        }
                     }
                     break;
                 }

@@ -36,6 +36,8 @@ class Character {
 
         this.setAppearance(data);
 
+        this.isSitting = false;
+
         // when to send the next step
         this.stepTimeout = null;
 
@@ -49,14 +51,29 @@ class Character {
     move(x, y) {
         clearTimeout(this.exitTimeout);
 
-        this.room.moveCharacter(this, x, y);
+        const tileEntity = this.room.objectMap[y][x];
 
-        const deltaX = this.x - x;
-        const deltaY = this.y - y;
+        if (tileEntity && tileEntity.sit) {
+            this.isSitting = true;
 
-        this.angle = WALK_ANGLE_DELTAS[deltaX][deltaY];
-        this.x = x;
-        this.y = y;
+            this.room.obstacleMap[this.y][this.x] = 0;
+
+            this.x = x;
+            this.y = y;
+
+            //this.room.sitCharacter(this, x, y);
+        } else {
+            this.isSitting = false;
+
+            this.room.moveCharacter(this, x, y);
+
+            const deltaX = this.x - x;
+            const deltaY = this.y - y;
+
+            this.angle = WALK_ANGLE_DELTAS[deltaX][deltaY];
+            this.x = x;
+            this.y = y;
+        }
 
         if (this.x === this.room.exit.x && this.y === this.room.exit.y) {
             this.exitTimeout = setTimeout(this.exitRoom.bind(this), 750);
