@@ -1,11 +1,4 @@
 BEGIN TRANSACTION;
-CREATE TABLE IF NOT EXISTS "rooms" (
-	"id"	INTEGER,
-	"owner_id"	INTEGER NOT NULL,
-	"name"	TEXT NOT NULL,
-	FOREIGN KEY("owner_id") REFERENCES "characters"("id"),
-	PRIMARY KEY("id" AUTOINCREMENT)
-);
 CREATE TABLE IF NOT EXISTS "chat" (
 	"id"	INTEGER,
 	"chatacter_id"	INTEGER NOT NULL,
@@ -14,9 +7,9 @@ CREATE TABLE IF NOT EXISTS "chat" (
 	"x"	INTEGER NOT NULL DEFAULT 0,
 	"y"	INTEGER NOT NULL DEFAULT 0,
 	"message"	TEXT NOT NULL DEFAULT '',
+	PRIMARY KEY("id"),
 	FOREIGN KEY("room_id") REFERENCES "rooms"("id"),
-	FOREIGN KEY("chatacter_id") REFERENCES "characters"("id"),
-	PRIMARY KEY("id")
+	FOREIGN KEY("chatacter_id") REFERENCES "characters"("id")
 );
 CREATE TABLE IF NOT EXISTS "characters" (
 	"id"	INTEGER,
@@ -28,9 +21,29 @@ CREATE TABLE IF NOT EXISTS "characters" (
 	"rank"	INTEGER NOT NULL DEFAULT 0,
 	"decibels"	INTEGER NOT NULL DEFAULT 0,
 	"is_female"	INTEGER NOT NULL DEFAULT 0,
-	"skin_shade"	INTEGER NOT NULL DEFAULT 0,
-	"head_type"	INTEGER NOT NULL DEFAULT 0,
-	"hair_type"	INTEGER NOT NULL DEFAULT 0,
+	"skin_tone"	INTEGER NOT NULL DEFAULT 2,
+	"face_index"	INTEGER NOT NULL DEFAULT 0,
+	"hair_index"	INTEGER NOT NULL DEFAULT 0,
+	"hair_colour"	INTEGER NOT NULL DEFAULT 0,
+	"shirt_index"	INTEGER NOT NULL DEFAULT 0,
+	"shirt_colour"	INTEGER NOT NULL DEFAULT 8352044,
+	"pants_index"	INTEGER NOT NULL DEFAULT 0,
+	"pants_colour"	INTEGER NOT NULL DEFAULT 2398539,
+	"shoes_index"	INTEGER NOT NULL DEFAULT 0,
+	"shoes_colour"	INTEGER NOT NULL DEFAULT 8345652,
+	"inventory"	TEXT NOT NULL DEFAULT '[]',
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+CREATE TABLE IF NOT EXISTS "rooms" (
+	"id"	INTEGER,
+	"owner_id"	INTEGER NOT NULL,
+	"studio"	TEXT NOT NULL,
+	"name"	TEXT NOT NULL DEFAULT 'studio_a',
+	"tile"	TEXT,
+	"wall"	TEXT,
+	"objects"	TEXT NOT NULL DEFAULT '[]',
+	"rugs"	TEXT NOT NULL DEFAULT '[]',
+	FOREIGN KEY("owner_id") REFERENCES "characters"("id"),
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
 COMMIT;
