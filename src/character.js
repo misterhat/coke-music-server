@@ -61,7 +61,7 @@ class Character {
             this.x = x;
             this.y = y;
 
-            //this.room.sitCharacter(this, x, y);
+            this.room.sitCharacter(this, x, y);
         } else {
             this.isSitting = false;
 

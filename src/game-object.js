@@ -14,19 +14,20 @@ class GameObject {
 
         this.x = x;
         this.y = y;
-        this.angle = angle || 0;
+
+        this.angle = angle;
     }
 
     getTileWidth() {
-        return this.angle <= 1 ? this.tileWidth : this.tileHeight;
+        return this.angles[this.angle] <= 1 ? this.tileWidth : this.tileHeight;
     }
 
     getTileHeight() {
-        return this.angle <= 1 ? this.tileHeight : this.tileWidth;
+        return this.angles[this.angle] <= 1 ? this.tileHeight : this.tileWidth;
     }
 
     rotate() {
-        this.angle = (this.angle + 1) % this.angles;
+        this.angle = (this.angle + 1) % this.angles.length;
     }
 
     isBlocked() {

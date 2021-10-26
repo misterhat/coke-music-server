@@ -160,9 +160,21 @@ class Server {
                 }
 
                 case 'get-rooms': {
+                    const { character } = socket;
+                    const showActive = message.active;
+                    const showMine = message.mine;
+
                     const rooms = [];
 
                     for (const [id, room] of this.rooms.entries()) {
+                        if (showActive && !room.characters.size) {
+                            continue;
+                        }
+
+                        if (showMine && room.ownerID !== character.id) {
+                            continue;
+                        }
+
                         rooms.push({
                             id,
                             studio: room.studio,
@@ -335,7 +347,7 @@ class Server {
                         name: message.name,
                         x: message.x,
                         y: message.y,
-                        angle: 0
+                        angle: message.angle
                     });
 
                     // the checks this

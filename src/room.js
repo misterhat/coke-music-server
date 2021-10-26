@@ -78,8 +78,12 @@ class Room {
         this.easystar.disableCornerCutting();
     }
 
-    broadcast(message) {
+    broadcast(message, ignoreOwner = false) {
         for (const character of this.characters) {
+            if (ignoreOwner && this.ownerID === character.id) {
+                continue;
+            }
+
             character.socket.send(JSON.stringify(message));
         }
     }
@@ -162,15 +166,21 @@ class Room {
                 x < object.x + object.getTileWidth();
                 x += 1
             ) {
-                //if (!object.sit) {
+                if (!object.sit) {
                     this.obstacleMap[y][x] = 1;
-                //}
+                }
 
                 this.objectMap[y][x] = object;
             }
         }
 
-        // TODO broadcast to the users who aren't the owner
+        this.broadcast({
+            type: 'add-object',
+            name: object.name,
+            x: object.x,
+            y: object.y,
+            angle: object.angle
+        }, true);
     }
 
     removeObject(object) {
@@ -195,7 +205,12 @@ class Room {
             }
         }
 
-        // TODO broadcast to the users who aren't the owner
+        this.broadcast({
+            type: 'remove-object',
+            name: object.name,
+            x: object.x,
+            y: object.y
+        }, true);
     }
 
     getObject(x, y, name) {
