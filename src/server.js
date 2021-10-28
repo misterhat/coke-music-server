@@ -23,7 +23,11 @@ class Server {
         this.trustProxy = !!trustProxy;
 
         this.server = new WebSocketServer({ port: this.port });
-        this.database = new Database(databaseFile || './coke-music.sqlite');
+
+        this.database = new Database(databaseFile || './coke-music.sqlite', {
+            verbose: log.debug
+        });
+
         this.queryHandler = new QueryHandler(this.database);
 
         // characters currently connected
@@ -106,6 +110,8 @@ class Server {
                     );
 
                     character.sendInventory();
+
+                    log.debug(`character ${character.username} logged in`);
                     break;
                 }
 
@@ -448,6 +454,31 @@ class Server {
                     room.save();
                     character.save();
 
+                    break;
+                }
+
+                case 'pick-up-rug':
+                case 'remove-rug': {
+                    const { character } = socket;
+
+                    if (!character.isRoomOwner()) {
+                        log.error('not room owner');
+                        break;
+                    }
+
+                    const { room } = character;
+
+                    const rug = room.getRug(message.x, message.y, message.name);
+
+                    if (rug) {
+                        room.removeRug(rug);
+                        room.save();
+
+                        if (message.type === 'pick-up-rug') {
+                            character.addItem('rugs', message.name);
+                            character.save();
+                        }
+                    }
                     break;
                 }
 

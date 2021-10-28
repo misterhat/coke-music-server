@@ -29,7 +29,11 @@ const STATEMENTS = {
         '`tile` = :tile, `wall` = :wall, `objects` = :objects, ' +
         '`rugs` = :rugs ' +
         'WHERE `id` = :id',
-    deleteRoom: 'DELETE FROM `rooms` WHERE `id` = ?'
+    deleteRoom: 'DELETE FROM `rooms` WHERE `id` = ?',
+    insertChat:
+        'INSERT INTO `chat` ' +
+        '(`character_id`, `room_id`, `colour`, `x`, `y`, `message`) ' +
+        'VALUES (:character_id, :room_id, :colour, :x, :y, :message)'
 };
 
 class QueryHandler {
@@ -98,6 +102,17 @@ class QueryHandler {
 
     deleteRoom(id) {
         this.statements.deleteRoom.run(id);
+    }
+
+    addChatLog(chat) {
+        this.statements.insertChat.run({
+            character_id: chat.id,
+            message: chat.message,
+            x: chat.x,
+            y: chat.y,
+            colour: chat.colour,
+            room_id: chat.room_id
+        });
     }
 }
 

@@ -174,13 +174,16 @@ class Room {
             }
         }
 
-        this.broadcast({
-            type: 'add-object',
-            name: object.name,
-            x: object.x,
-            y: object.y,
-            angle: object.angle
-        }, true);
+        this.broadcast(
+            {
+                type: 'add-object',
+                name: object.name,
+                x: object.x,
+                y: object.y,
+                angle: object.angle
+            },
+            true
+        );
     }
 
     removeObject(object) {
@@ -205,12 +208,15 @@ class Room {
             }
         }
 
-        this.broadcast({
-            type: 'remove-object',
-            name: object.name,
-            x: object.x,
-            y: object.y
-        }, true);
+        this.broadcast(
+            {
+                type: 'remove-object',
+                name: object.name,
+                x: object.x,
+                y: object.y
+            },
+            true
+        );
     }
 
     getObject(x, y, name) {
@@ -225,17 +231,49 @@ class Room {
         this.rugs.push(rug);
     }
 
-    chat(character, message) {
-        // TODO log chat
+    getRug(x, y, name) {
+        for (const rug of this.rugs) {
+            if (rug.x === x && rug.y === y && rug.name === name) {
+                return rug;
+            }
+        }
+    }
 
-        this.broadcast({
+    removeRug(rug) {
+        for (let i = 0; i < this.rugs.length; i += 1) {
+            if (this.rugs[i] === rug) {
+                this.rugs.splice(i, 1);
+                break;
+            }
+        }
+
+        this.broadcast(
+            {
+                type: 'remove-rug',
+                name: rug.name,
+                x: rug.x,
+                y: rug.y
+            },
+            true
+        );
+    }
+
+    chat(character, message) {
+        const chat = {
             type: 'chat',
             id: character.id,
             message,
             x: character.x,
             y: character.y,
-            colour: character.shirtColour
-        });
+            colour: character.shirtColour,
+            room_id: character.room.id
+        };
+
+        this.server.queryHandler.addChatLog(chat);
+
+        delete chat.room_id;
+
+        this.broadcast(chat);
     }
 
     // remove all of the characters from the room
