@@ -14,7 +14,7 @@ const STATEMENTS = {
         '`shirt_index` = :shirt_index, `shirt_colour` = :shirt_colour, ' +
         '`pants_index` = :pants_index, `pants_colour` = :pants_colour, ' +
         '`shoes_index` = :shoes_index, `shoes_colour` = :shoes_colour, ' +
-        '`skin_tone` = :skin_tone ' +
+        '`skin_tone` = :skin_tone, `is_female`= :is_female ' +
         'WHERE `id` = :id',
     insertRoom:
         'INSERT INTO `rooms` (`owner_id`, `studio`, `name`) ' +
@@ -80,7 +80,8 @@ class QueryHandler {
             pants_colour: character.pantsColour,
             shoes_index: character.shoesIndex,
             shoes_colour: character.shoesColour,
-            skin_tone: character.skinTone
+            skin_tone: character.skinTone,
+            is_female: character.isFemale
         });
     }
 

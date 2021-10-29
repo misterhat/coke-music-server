@@ -222,7 +222,8 @@ class Character {
             pantsColour: this.pantsColour,
             shoesIndex: this.shoesIndex,
             shoesColour: this.shoesColour,
-            skinTone: this.skinTone
+            skinTone: this.skinTone,
+            isFemale: this.isFemale
         };
     }
 }
