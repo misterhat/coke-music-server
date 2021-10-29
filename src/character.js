@@ -226,6 +226,9 @@ class Character {
             isFemale: this.isFemale
         };
     }
+
+    static validateAppearance(data) {
+    }
 }
 
 module.exports = Character;

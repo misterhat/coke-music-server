@@ -510,6 +510,7 @@ class Server {
                 case 'appearance': {
                     // TODO check colours and indexes
                     const { character } = socket;
+                    //Character.validateAppearance();
                     character.setAppearance(message);
                     character.save();
                     break;

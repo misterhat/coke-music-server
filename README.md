@@ -10,10 +10,6 @@ for use with
 	$ npm install
 	$ npm start # register and login using client
 
-## usage
-```javascript
-```
-
 ## license
 Copyright 2021  Zorian Medwid
 

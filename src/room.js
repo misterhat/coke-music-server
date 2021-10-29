@@ -1,5 +1,6 @@
 const EasyStar = require('@misterhat/easystarjs');
 const GameObject = require('./game-object');
+const Poster = require('./poster');
 const Rug = require('./rug');
 const rooms = require('coke-music-data/rooms.json');
 
@@ -14,7 +15,8 @@ class Room {
             wall,
             tile,
             objects,
-            rugs
+            rugs,
+            posters
         } = data;
 
         this.server = server;
@@ -38,6 +40,7 @@ class Room {
 
         this.objects = [];
         this.rugs = [];
+        this.posters = [];
 
         for (const data of JSON.parse(objects || '[]')) {
             this.addObject(new GameObject(this.server, this, data));
@@ -45,6 +48,10 @@ class Room {
 
         for (const data of JSON.parse(rugs || '[]')) {
             this.addRug(new Rug(this.server, data));
+        }
+
+        for (const data of JSON.parse(posters || '[]')) {
+            this.addPoster(new Poster(this.server, data));
         }
 
         this.pathInterval = setInterval(() => {
@@ -136,6 +143,7 @@ class Room {
         this.broadcast({
             type: 'character-appearance',
             id: character.id,
+            faceIndex: character.faceIndex,
             hairIndex: character.hairIndex,
             hairColour: character.hairColour,
             shirtIndex: character.shirtIndex,
@@ -144,17 +152,13 @@ class Room {
             pantsColour: character.pantsColour,
             shoesIndex: character.shoesIndex,
             shoesColour: character.shoesColour,
-            skinTone: character.skinTone
+            skinTone: character.skinTone,
+            isFemale: character.isFemale
         });
     }
 
     sitCharacter(character, x, y) {
-        this.broadcast({
-            type: 'character-sit',
-            id: character.id,
-            x,
-            y
-        });
+        this.broadcast({ type: 'character-sit', id: character.id, x, y });
     }
 
     addObject(object) {
