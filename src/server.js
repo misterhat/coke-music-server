@@ -1,17 +1,16 @@
 const Character = require('./character');
 const Database = require('better-sqlite3');
+const GameObject = require('./game-object');
 const QueryHandler = require('./query-handler');
 const Room = require('./room');
+const Rug = require('./rug');
 const bcrypt = require('bcryptjs');
-const camelcaseKeys = require('camelcase-keys');
 const log = require('bole')('server');
-const promisify = require('util').promisify;
 const rooms = require('coke-music-data/rooms.json');
 const tiles = require('coke-music-data/tiles.json').map(({ file }) => file);
 const walls = require('coke-music-data/walls.json').map(({ file }) => file);
 const { WebSocketServer } = require('ws');
-const GameObject = require('./game-object');
-const Rug = require('./rug');
+const { promisify } = require('util');
 
 const bcryptCompare = promisify(bcrypt.compare);
 const bcryptHash = promisify(bcrypt.hash);
@@ -392,6 +391,8 @@ class Server {
                             character.addItem('furniture', message.name);
                             character.save();
                         }
+                    } else {
+                        log.error('character removing non-existent object');
                     }
                     break;
                 }
@@ -526,13 +527,12 @@ class Server {
                             character.sendAppearancePanel();
                             break;
                         case 'item': {
+                            const [type, name] = message.args;
+
                             let amount = Number(message.args[2]) || 1;
 
                             for (let i = 0; i < amount; i += 1) {
-                                character.addItem(
-                                    message.args[0],
-                                    message.args[1]
-                                );
+                                character.addItem(type, name);
                             }
 
                             character.save();

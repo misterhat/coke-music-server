@@ -1,4 +1,7 @@
+const furniture = require('coke-music-data/furniture.json');
 const log = require('bole')('character');
+const posters = require('coke-music-data/posters.json');
+const rugs = require('coke-music-data/rugs.json');
 
 const STEP_TIMEOUT = 500;
 
@@ -160,8 +163,27 @@ class Character {
         );
     }
 
-    addItem(type, name) {
-        this.inventory.push({ type, name });
+    addItem(type, name, amount = 1) {
+        if (type !== 'furniture' && type !== 'posters' && type !== 'rugs') {
+            throw new Error(`invalid type: ${type}.`);
+        }
+
+        if (type === 'furniture' && !furniture[name]) {
+            throw new Error(`invalid furniture name: ${name}`);
+        }
+
+        if (type === 'rugs' && !rugs[name]) {
+            throw new Error(`invalid rug name: ${name}`);
+        }
+
+        if (type === 'posters' && !posters[name]) {
+            throw new Error(`invalid poster name: ${name}`);
+        }
+
+        for (let i = 0; i < amount; i += 1) {
+            this.inventory.push({ type, name });
+        }
+
         this.sendInventory();
     }
 
@@ -177,6 +199,8 @@ class Character {
         return hasItem;
     }
 
+    // removes an item and returns true if successful (false if character does
+    // not have item)
     removeItem(type, name) {
         let removed = false;
 
