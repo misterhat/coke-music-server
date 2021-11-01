@@ -47,11 +47,11 @@ class Room {
         }
 
         for (const data of JSON.parse(rugs || '[]')) {
-            this.addRug(new Rug(this.server, data));
+            this.addRug(new Rug(this.server, this, data));
         }
 
         for (const data of JSON.parse(posters || '[]')) {
-            this.addPoster(new Poster(this.server, data));
+            this.addPoster(new Poster(this.server, this, data));
         }
 
         this.pathInterval = setInterval(() => {
@@ -233,6 +233,16 @@ class Room {
 
     addRug(rug) {
         this.rugs.push(rug);
+
+        this.broadcast(
+            {
+                type: 'add-rug',
+                name: rug.name,
+                x: rug.x,
+                y: rug.y
+            },
+            true
+        );
     }
 
     getRug(x, y, name) {
@@ -257,6 +267,47 @@ class Room {
                 name: rug.name,
                 x: rug.x,
                 y: rug.y
+            },
+            true
+        );
+    }
+
+    addPoster(poster) {
+        this.posters.push(poster);
+
+        this.broadcast(
+            {
+                type: 'add-poster',
+                name: poster.name,
+                x: poster.x,
+                y: poster.y
+            },
+            true
+        );
+    }
+
+    getPoster(x, y, name) {
+        for (const poster of this.posters) {
+            if (poster.x === x && poster.y === y && poster.name === name) {
+                return poster;
+            }
+        }
+    }
+
+    removePoster(poster) {
+        for (let i = 0; i < this.posters.length; i += 1) {
+            if (this.posters[i] === poster) {
+                this.posters.splice(i, 1);
+                break;
+            }
+        }
+
+        this.broadcast(
+            {
+                type: 'remove-poster',
+                name: poster.name,
+                x: poster.x,
+                y: poster.y
             },
             true
         );
@@ -288,6 +339,7 @@ class Room {
 
         this.objects = [];
         this.rugs = [];
+        this.posters = [];
     }
 
     save() {
@@ -298,7 +350,8 @@ class Room {
             tile: this.tile,
             wall: this.wall,
             objects: JSON.stringify(this.objects),
-            rugs: JSON.stringify(this.rugs)
+            rugs: JSON.stringify(this.rugs),
+            posters: JSON.stringify(this.posters)
         });
     }
 
@@ -306,6 +359,7 @@ class Room {
         this.server.queryHandler.deleteRoom(this.id);
     }
 
+    // used to send to client
     toJSON() {
         return {
             id: this.id,
@@ -319,7 +373,8 @@ class Room {
                 return character.toJSON();
             }),
             objects: this.objects,
-            rugs: this.rugs
+            rugs: this.rugs,
+            posters: this.posters
         };
     }
 }

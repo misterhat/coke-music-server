@@ -1,6 +1,7 @@
 const Character = require('./character');
 const Database = require('better-sqlite3');
 const GameObject = require('./game-object');
+const Poster = require('./poster');
 const QueryHandler = require('./query-handler');
 const Room = require('./room');
 const Rug = require('./rug');
@@ -30,9 +31,11 @@ class Server {
         this.queryHandler = new QueryHandler(this.database);
 
         // characters currently connected
+        // { characterID: Character }
         this.characters = new Map();
 
         // all of the rooms from the database
+        // { roomID: Room }
         this.rooms = new Map();
     }
 
@@ -278,9 +281,13 @@ class Server {
 
                     const { room } = character;
 
+                    // studio type
+                    const oldName = room.name;
+
                     const oldCharacters = new Set(room.characters);
                     const oldObjects = room.objects;
                     const oldRugs = room.rugs;
+                    const oldPosters = room.posters;
 
                     room.clear();
 
@@ -291,12 +298,34 @@ class Server {
 
                     room.updateRoomType();
 
-                    for (const object of oldObjects) {
-                        room.addObject(object);
-                    }
+                    if (oldName !== room.name) {
+                        // pick-up all the objects if we switch room layout
+                        for (const object of oldObjects) {
+                            character.addItem('furniture', object.name);
+                        }
 
-                    for (const rug of oldRugs) {
-                        room.addRug(rug);
+                        for (const rug of oldRugs) {
+                            character.addItem('rugs', rug.name);
+                        }
+
+                        for (const poster of oldPosters) {
+                            character.addItem('posters', poster.name);
+                        }
+
+                        character.save();
+                    } else {
+                        // if room layout is the same, keep them
+                        for (const object of oldObjects) {
+                            room.addObject(object);
+                        }
+
+                        for (const rug of oldRugs) {
+                            room.addRug(rug);
+                        }
+
+                        for (const poster of oldPosters) {
+                            room.addPoster(poster);
+                        }
                     }
 
                     room.save();
@@ -445,7 +474,7 @@ class Server {
 
                     const { room } = character;
 
-                    const rug = new Rug(this, {
+                    const rug = new Rug(this, room, {
                         name: message.name,
                         x: message.x,
                         y: message.y
@@ -477,6 +506,70 @@ class Server {
 
                         if (message.type === 'pick-up-rug') {
                             character.addItem('rugs', message.name);
+                            character.save();
+                        }
+                    }
+                    break;
+                }
+
+                case 'add-poster': {
+                    const { character } = socket;
+
+                    if (!character.isRoomOwner()) {
+                        log.error('not room owner');
+                        break;
+                    }
+
+                    if (!character.removeItem('posters', message.name)) {
+                        log.error('character does not have item');
+                        break;
+                    }
+
+                    const { room } = character;
+
+                    if (!room.walls[message.x]) {
+                        log.error('out of bounds');
+                        break;
+                    }
+
+                    // TODO check y
+
+                    const poster = new Poster(this, room, {
+                        name: message.name,
+                        x: message.x,
+                        y: message.y
+                    });
+
+                    room.addPoster(poster);
+                    room.save();
+                    character.save();
+
+                    break;
+                }
+
+                case 'pick-up-poster':
+                case 'remove-poster': {
+                    const { character } = socket;
+
+                    if (!character.isRoomOwner()) {
+                        log.error('not room owner');
+                        break;
+                    }
+
+                    const { room } = character;
+
+                    const poster = room.getPoster(
+                        message.x,
+                        message.y,
+                        message.name
+                    );
+
+                    if (poster) {
+                        room.removePoster(poster);
+                        room.save();
+
+                        if (message.type === 'pick-up-poster') {
+                            character.addItem('posters', message.name);
                             character.save();
                         }
                     }
@@ -528,13 +621,8 @@ class Server {
                             break;
                         case 'item': {
                             const [type, name] = message.args;
-
                             let amount = Number(message.args[2]) || 1;
-
-                            for (let i = 0; i < amount; i += 1) {
-                                character.addItem(type, name);
-                            }
-
+                            character.addItem(type, name, amount);
                             character.save();
                             break;
                         }

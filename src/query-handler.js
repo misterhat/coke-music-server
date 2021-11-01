@@ -27,7 +27,7 @@ const STATEMENTS = {
     updateRoom:
         'UPDATE `rooms` SET `name` = :name, `studio` = :studio, ' +
         '`tile` = :tile, `wall` = :wall, `objects` = :objects, ' +
-        '`rugs` = :rugs ' +
+        '`rugs` = :rugs, `posters` = :posters ' +
         'WHERE `id` = :id',
     deleteRoom: 'DELETE FROM `rooms` WHERE `id` = ?',
     insertChat:
@@ -62,7 +62,9 @@ class QueryHandler {
             this.statements.getCharacter.get(username)
         );
 
-        character.inventory = JSON.parse(character.inventory);
+        if (character) {
+            character.inventory = JSON.parse(character.inventory);
+        }
 
         return character;
     }

@@ -1,8 +1,9 @@
 const rugs = require('coke-music-data/rugs.json');
 
 class Rug {
-    constructor(server, { name, x, y }) {
+    constructor(server, room, { name, x, y }) {
         this.server = server;
+        this.room = room;
 
         this.name = name;
 
