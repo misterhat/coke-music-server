@@ -602,9 +602,13 @@ class Server {
 
                 // change character appearance
                 case 'appearance': {
-                    // TODO check colours and indexes
                     const { character } = socket;
-                    //Character.validateAppearance();
+
+                    if (!Character.validateAppearance(message)) {
+                        log.error('invalid appearance');
+                        break;
+                    }
+
                     character.setAppearance(message);
                     character.save();
                     break;

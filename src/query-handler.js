@@ -83,7 +83,7 @@ class QueryHandler {
             shoes_index: character.shoesIndex,
             shoes_colour: character.shoesColour,
             skin_tone: character.skinTone,
-            is_female: character.isFemale
+            is_female: Number(character.isFemale)
         });
     }
 

@@ -1,9 +1,19 @@
+const faces = require('coke-music-data/faces.json');
 const furniture = require('coke-music-data/furniture.json');
 const log = require('bole')('character');
 const posters = require('coke-music-data/posters.json');
 const rugs = require('coke-music-data/rugs.json');
+const shirts = require('coke-music-data/shirts.json');
 
 const STEP_TIMEOUT = 500;
+
+const TOTAL_INDEXES = {
+    face: faces.length - 1,
+    hair: 10,
+    shirt: shirts.length - 1,
+    pants: 10,
+    shoes: 5
+};
 
 // [deltaX][deltaY] = spriteOffset
 // to determine which direction should display which sprite
@@ -25,11 +35,17 @@ const WALK_ANGLE_DELTAS = {
     }
 };
 
+function validateColour(colour) {
+    return colour >= 0 && colour <= 0xffffff;
+}
+
 class Character {
     constructor(server, data) {
         this.server = server;
 
         Object.assign(this, data);
+
+        this.isFemale = !!this.isFemale;
 
         this.room = null;
 
@@ -221,6 +237,8 @@ class Character {
     setAppearance(appearance) {
         Object.assign(this, appearance);
 
+        this.isFemale = !!this.isFemale;
+
         if (this.room) {
             this.room.updateCharacterAppearance(this);
         }
@@ -252,6 +270,18 @@ class Character {
     }
 
     static validateAppearance(data) {
+        return (
+            validateColour(data.hairColour) &&
+            validateColour(data.shirtColour) &&
+            validateColour(data.pantsColour) &&
+            validateColour(data.shoesColour) &&
+            data.skinTone >= 0 && data.skinTone <= 10 &&
+            data.faceIndex >= 0 && data.faceIndex <= TOTAL_INDEXES.face &&
+            data.hairIndex >= 0 && data.hairIndex <= TOTAL_INDEXES.hair &&
+            data.shirtIndex >= 0 && data.shirtIndex <= TOTAL_INDEXES.shirt &&
+            data.pantsIndex >= 0 && data.pantsIndex <= TOTAL_INDEXES.pants &&
+            data.shoesIndex >= 0 && data.shoesIndex <= TOTAL_INDEXES.shoes
+        );
     }
 }
 

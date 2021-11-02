@@ -1,16 +1,4 @@
 BEGIN TRANSACTION;
-CREATE TABLE IF NOT EXISTS "chat" (
-	"id"	INTEGER,
-	"chatacter_id"	INTEGER NOT NULL,
-	"room_id"	INTEGER NOT NULL,
-	"colour"	TEXT,
-	"x"	INTEGER NOT NULL DEFAULT 0,
-	"y"	INTEGER NOT NULL DEFAULT 0,
-	"message"	TEXT NOT NULL DEFAULT '',
-	PRIMARY KEY("id"),
-	FOREIGN KEY("room_id") REFERENCES "rooms"("id"),
-	FOREIGN KEY("chatacter_id") REFERENCES "characters"("id")
-);
 CREATE TABLE IF NOT EXISTS "characters" (
 	"id"	INTEGER,
 	"username"	TEXT NOT NULL UNIQUE,
@@ -34,6 +22,18 @@ CREATE TABLE IF NOT EXISTS "characters" (
 	"inventory"	TEXT NOT NULL DEFAULT '[]',
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
+CREATE TABLE IF NOT EXISTS "chat" (
+	"id"	INTEGER,
+	"character_id"	INTEGER NOT NULL,
+	"room_id"	INTEGER NOT NULL,
+	"colour"	TEXT,
+	"x"	INTEGER NOT NULL DEFAULT 0,
+	"y"	INTEGER NOT NULL DEFAULT 0,
+	"message"	TEXT NOT NULL DEFAULT '',
+	FOREIGN KEY("character_id") REFERENCES "characters"("id"),
+	FOREIGN KEY("room_id") REFERENCES "rooms"("id"),
+	PRIMARY KEY("id")
+);
 CREATE TABLE IF NOT EXISTS "rooms" (
 	"id"	INTEGER,
 	"owner_id"	INTEGER NOT NULL,
@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS "rooms" (
 	"wall"	TEXT,
 	"objects"	TEXT NOT NULL DEFAULT '[]',
 	"rugs"	TEXT NOT NULL DEFAULT '[]',
+	"posters"	TEXT NOT NULL DEFAULT '[]',
 	FOREIGN KEY("owner_id") REFERENCES "characters"("id"),
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
