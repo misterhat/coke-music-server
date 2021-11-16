@@ -204,6 +204,10 @@ class Server {
                         break;
                     }
 
+                    if (room.characters.size >= 25) {
+                        break;
+                    }
+
                     socket.character.joinRoom(room);
 
                     break;
