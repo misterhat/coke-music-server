@@ -29,6 +29,7 @@
     "better-sqlite3": "^7.4.3",
     "bole": "^4.0.0",
     "camelcase-keys": "^7.0.1",
+    "coke-music-data": "github:misterhat/coke-music-data",
     "garnish": "^5.2.0",
     "ws": "^8.2.3"
   }
