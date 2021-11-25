@@ -10,6 +10,17 @@ for use with
 	$ npm install
 	$ npm start # register and login using client
 
+## config.json
+
+```javascript
+{
+    "port": 43594, // the websocket port to listen on
+    "databaseFile": "./coke-music.sqlite", // sqlite3 file to use
+    "hashRounds": 10, // bcrypt hash rounds
+    "trustProxy": false // use x-forwarded-for as socket IP addresses
+}
+```
+
 ## license
 Copyright 2021  Zorian Medwid
 
